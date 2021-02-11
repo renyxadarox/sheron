@@ -25,7 +25,7 @@ def run(c, sq):
     if c is None:
         return
     cc = sq[c]
-    for b in range(ceil((c + 1) / 2), c + 1):
+    for b in range(ceil(sqrt(cc / 2)), c + 1):
         if not c & 1 and not b & 1:
             continue
         bb = sq[b]

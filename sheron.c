@@ -30,7 +30,7 @@
 #define VERSION "1.00"
 #define COPYRIGHT "Copyright 2021"
 #define AUTHOR "Alexander Belogourov aka x3mEn"
-#define TITLE "Heron Triangles with Square Sides search program"
+#define TITLE "Heronian Triangles with Square Sides search program"
 
 // progress - режим із відображенням прогресу
 int progress = 0;
@@ -48,7 +48,7 @@ int verbose = 0;
 int found = 0;
 
 struct timeb starttime, endtime;
-uint32_t minc, minb, maxc, maxb, curc, curb;
+uint32_t minc, minb, maxc, maxb, curc, curb, total;
 char repfname[256] = "rep", outfname[256] = "out", chkfname[256] = "chk";
 FILE * fout, * frep, * fchk;
 uint64_t checksum = 0, counter;
@@ -186,7 +186,7 @@ void free_primes(void)
 void init_primes(uint64_t max_n)
 {
     uint32_t sq = ceil(sqrtl(max_n)), cb = ceil(sqrtl(sqrtf(max_n)));
-    uint32_t sSize = ceil((float)sq / 128);
+    uint32_t sSize = ceil((double)sq / 128);
     uint32_t i, j;
     uint64_t * sieve;
     sieve = (uint64_t*) calloc (sSize, sizeof(uint64_t));
@@ -326,21 +326,22 @@ void save_checkpoint(uint32_t curc, uint32_t curb)
 
 int init_task(void)
 {
-    if (minc > maxc || minc < 1) return 1;
-    minb = min(max(minb, ceil(((float)minc + 1) / 2)), minc + 1);
-    maxb = max(min(maxb, maxc + 1), ceil(((float)maxc + 1) / 2));
+    if (minc > maxc || minc < 1 || (minc == maxc && minb > maxb)) return 1;
+    minb = min(max(minb, ceil(sqrtl((double)minc * minc / 2))), minc + 1);
+    maxb = max(min(maxb, maxc + 1), ceil(sqrtl((double)maxc * maxc / 2)));
     if (minc == maxc) {
         if (minb >= maxb) return 1;
     }
-    curc = minc;
-    curb = minb;
+    total = 0;
+    for (uint32_t c = minc; c <= maxc; c++)
+        total += ((c == maxc) ? maxb : c+1) - ((c == minc) ? minb : ceil(sqrtl((double)c * c / 2)));
     return 0;
 }
 
 #define PBSTR "========================================================================"
 #define PBWIDTH 72
 #define SCRWIDTH 80
-void do_progress( double percentage )
+void do_progress(double percentage)
 {
     int val = (int) (percentage);
     int lpad = (int) (percentage  * (val==100?SCRWIDTH:PBWIDTH) / 100);
@@ -434,9 +435,14 @@ int main(int argc, char** argv)
 #endif
 
     int error_code, checkpoint_code;
-    error_code = checkpoint_code = read_checkpoint();
-    if (error_code) error_code = init_task();
+    checkpoint_code = read_checkpoint();
+    error_code = init_task();
     if (error_code) return error_code;
+    if (checkpoint_code) {
+        curc = minc;
+        curb = minb;
+    }
+    if (curc < minc || curc > maxc || (curc == minc && minb > curb) || (curc == maxc && maxb < curb)) return 1;
 
     fout = fopen(outfname, "r");
     if (skip && fout != NULL && checkpoint_code) {
@@ -479,9 +485,9 @@ int main(int argc, char** argv)
     init_primes((uint64_t)maxc * (uint64_t)maxc * 3);
 
     int cpcnt, ctpcnt = 0;
-    float cstep = 0.001;
+    double cstep = 0.001;
     int fpcnt, ftpcnt = 0;
-    float fstep = 0.0001;
+    double fstep = 0.0001;
 
     if (progress)
         do_progress(ctpcnt);
@@ -489,21 +495,27 @@ int main(int argc, char** argv)
     boinc_fraction_done(0);
 #endif
 
-    uint32_t a, b, c, gbc, bmin, total = (maxc - minc) * (maxc + 1) / 2 + maxb - minb, step;
+    uint32_t a, b, c, gbc, bmin, step = 0;
     uint64_t aa, bb, cc;
     __uint128_t area;
+
+    for (c = minc; c < curc; c++)
+        step += c+1 - ((c == minc) ? minb : ceil(sqrtl((double)c * c / 2)));
+    step += curb - ((c == minc) ? minb : ceil(sqrtl((double)curc * curc / 2)));
+
     for (c = curc; c <= maxc; c++) {
-        cc = (uint64_t)c * (uint64_t)c;
-        bmin = ceil(((float)c+1)/2);
-        for (b = max(max(bmin, curb), ((c == minc) ? minb : 0)); b < ((c == maxc) ? maxb : c+1); b++) {
+        cc = (uint64_t)c * c;
+        bmin = max(ceil(sqrtl((double)cc / 2)), ((c == minc) ? minb : 0));
+        for (b = max(bmin, curb); b < ((c == maxc) ? maxb : c+1); b++) {
             curb = 0;
+            step++;
             if (!(c&1) && !(b&1)) continue;
-            bb = (uint64_t)b * (uint64_t)b;
+            bb = (uint64_t)b * b;
             gbc = gcd(b, c);
             counter = 0;
             for (a = lrintl(sqrtl(cc - bb)) + 1; a < b+1; a++) {
                 if ((a & 1) + (b & 1) + (c & 1) != 2 || gcd(a, gbc) != 1) continue;
-                aa = (uint64_t)a * (uint64_t)a;
+                aa = (uint64_t)a * a;
                 clear_factors();
                 factorize(aa + bb - cc);
                 factorize(aa - bb + cc);
@@ -525,7 +537,6 @@ int main(int argc, char** argv)
                 }
             }
             checksum += counter;
-            step = (c - minc) * (maxc + 1) / 2 + b - bmin;
             fpcnt = (int)((double)step / total / fstep);
             if (ftpcnt != fpcnt) {
                 ftpcnt = fpcnt;
