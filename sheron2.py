@@ -57,14 +57,16 @@ while m <= z:
         mn = m*n
         mmnn = m*m + n*n
         for p in range(2, m+1):
+            mnpp = mn * p * p
+            mmnnp = mmnn * p
+            mp = m * p
+            np = n * p
             for q in range(1, p):
                 if gcd(p, q) > 1:
                     continue
-                mnpp = mn * p * p
-                mmnnp = mmnn * p
-                a = mmnnp * q                     # a = p * q * (m*m + n*n)
-                b = mnpp + mn*q*q                 # b = m * n * (p*p + q*q)
-                c = (m*q + n*p) * (m*p - n*q)     # c = (m*q + n*p) * (m*p - n*q)
+                a = mmnnp * q
+                b = mnpp + mn*q*q
+                c = (m*q + np) * (mp - n*q)
                 triangles += 1
                 # There is no isosceles Heron triangles with square sides
                 # Stănică, Pantelimon; Sarkar, Santanu; Sen Gupta, Sourav; Maitra, Subhamoy; Kar, Nirupam (2013).
