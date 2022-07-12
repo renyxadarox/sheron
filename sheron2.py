@@ -56,8 +56,7 @@ while m <= z:
             continue
         mn = m*n
         mmnn = m*m + n*n
-        p = 2
-        while p <= m:
+        for p in range(2, m+1):
             for q in range(1, p):
                 if gcd(p, q) > 1:
                     continue
@@ -89,7 +88,6 @@ while m <= z:
                         print(f"{current_time()} - HTSS:{htss} ({a=}, {b=}, {c=}, {area=}) <- ({m=}, {n=}, {p=}, {q=})")
                         with open(out_file, 'a') as f:
                             f.write(f"{m=},{n=},{p=},{q=},{a=},{b=},{c=},{area=}")
-            p += 1
     m += 1
     dif = int(round((timer() - start_time) * 1000))
     with open(chk_file, 'w') as f:
