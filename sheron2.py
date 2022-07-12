@@ -59,8 +59,6 @@ while m <= z:
         p = 2
         while p <= m:
             for q in range(1, p):
-                if p == m and q > n:
-                    break
                 if gcd(p, q) > 1:
                     continue
                 mnpp = mn * p * p
