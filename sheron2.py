@@ -82,14 +82,15 @@ while m <= z:
                     rootb = isqrt(b)
                     print(f"{current_time()} - almost:{almost} ({roota}², {rootb}², {c}) <- ({m=}, {n=}, {p=}, {q=})")
                     if is_square(c):
+                        rootc = isqrt(c)
                         # Heron's formula the area of a triangle whose sides have lengths a, b, and c
                         # s is semi-perimeter
                         s = (a + b + c) // 2
                         area = isqrt(s * (s-a) * (s-b) * (s-c))
                         htss += 1
-                        print(f"{current_time()} - HTSS:{htss} ({a=}, {b=}, {c=}, {area=}) <- ({m=}, {n=}, {p=}, {q=})")
+                        print(f"{current_time()} - HTSS:{htss} ({roota}², {rootb}², {rootc}², {area=}) <- ({m=}, {n=}, {p=}, {q=})")
                         with open(out_file, 'a') as f:
-                            f.write(f"{m=},{n=},{p=},{q=},{a=},{b=},{c=},{area=}")
+                            f.write(f"{m=},{n=},{p=},{q=},{a=},{b=},{c=},{area=}\n")
     m += 1
     dif = int(round((timer() - start_time) * 1000))
     with open(chk_file, 'w') as f:
