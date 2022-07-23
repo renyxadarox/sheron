@@ -14,7 +14,7 @@ parser.add_argument('-s', '--start', type=int, help='lower bound', default=2)
 parser.add_argument('-f', '--finish', type=int, help='upper bound', default=maxsize)
 args = parser.parse_args()
 m = args.start
-z = args.finish
+finish = args.finish
 dif = 0
 chk_file = 'sheron2.chk'
 out_file = 'sheron2.out'
@@ -48,7 +48,7 @@ start_loop = start_time
 # c = (mq+np)(mp-nq)
 # for integers m, n, p and q such that (m, n)=1, (p, q)=1
 
-while m <= z:
+while m <= finish:
     print_current_state(datetime.utcfromtimestamp(timer() - start_loop))
     start_loop = timer()
     for n in range(1, m):
@@ -65,32 +65,40 @@ while m <= z:
                 if gcd(p, q) > 1:
                     continue
                 a = mmnnp * q
-                b = mnpp + mn*q*q
-                c = (m*q + np) * (mp - n*q)
-                triangles += 1
-                # There is no isosceles Heron triangles with square sides
-                # Stănică, Pantelimon; Sarkar, Santanu; Sen Gupta, Sourav; Maitra, Subhamoy; Kar, Nirupam (2013).
-                # "Counting Heron triangles with constraints". Integers. 13: Paper No. A3, 17pp., p. 10
-                if a == b or b == c or c == a:
-                    continue
-                proportion = gcd(a, b, c)
-                a, b, c = map(lambda w: w // proportion, sorted([a, b, c]))
-                # Check Heronian triangle (a, b, c) for square sides
-                if is_square(a) and is_square(b):
-                    almost += 1
-                    roota = isqrt(a)
-                    rootb = isqrt(b)
-                    print(f"{current_time()} - almost:{almost} ({roota}², {rootb}², {c}) <- ({m=}, {n=}, {p=}, {q=})")
-                    if is_square(c):
-                        rootc = isqrt(c)
-                        # Heron's formula the area of a triangle whose sides have lengths a, b, and c
-                        # s is semi-perimeter
-                        s = (a + b + c) // 2
-                        area = isqrt(s * (s-a) * (s-b) * (s-c))
-                        htss += 1
-                        print(f"{current_time()} - HTSS:{htss} ({roota}², {rootb}², {rootc}², {area=}) <- ({m=}, {n=}, {p=}, {q=})")
-                        with open(out_file, 'a') as f:
-                            f.write(f"{m=},{n=},{p=},{q=},{a=},{b=},{c=},{area=}\n")
+                b = mnpp + mn * q * q
+                for i in (0, 1):
+                    c = (m*q + np) * (mp - n*q) if i == 0 else (n*q + mp) * (np - m*q)
+                    if c < 0:
+                        continue
+                    triangles += 1
+                    # There is no isosceles Heron triangles with square sides
+                    # Stănică, Pantelimon; Sarkar, Santanu; Sen Gupta, Sourav; Maitra, Subhamoy; Kar, Nirupam (2013).
+                    # "Counting Heron triangles with constraints". Integers. 13: Paper No. A3, 17pp., p. 10
+                    if a == b or b == c or c == a:
+                        continue
+                    if i:
+                        m, n = n, m
+                    proportion = gcd(a, b, c)
+                    x, y, z = map(lambda w: w // proportion, sorted([a, b, c]))
+                    # Check Heronian triangle (x, y, z) for square sides
+                    if is_square(x) and is_square(y):
+                        rootx = isqrt(x)
+                        rooty = isqrt(y)
+                        if is_square(z):
+                            rootz = isqrt(z)
+                            # Heron's formula the area of a triangle whose sides have lengths x, y, and z
+                            # s is semi-perimeter
+                            s = (x + y + z) // 2
+                            area = isqrt(s * (s-x) * (s-y) * (s-z))
+                            htss += 1
+                            print(f"{current_time()} - HTSS:{htss} ({rootx}², {rooty}², {rootz}², {area=}) <- ({m=}, {n=}, {p=}, {q=})")
+                            with open(out_file, 'a') as f:
+                                f.write(f"{m=},{n=},{p=},{q=},{x=},{y=},{z=},{area=}\n")
+                        else:
+                            almost += 1
+                            print(f"{current_time()} - almost:{almost} ({rootx}², {rooty}², {z}) <- ({m=}, {n=}, {p=}, {q=})")
+                    if i:
+                        m, n = n, m
     m += 1
     dif = int(round((timer() - start_time) * 1000))
     with open(chk_file, 'w') as f:
